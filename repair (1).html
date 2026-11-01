@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Мастерская</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: var(--tg-theme-bg-color, #17212b);
+    --bg2: var(--tg-theme-secondary-bg-color, #232e3c);
+    --text: var(--tg-theme-text-color, #f5f5f5);
+    --hint: var(--tg-theme-hint-color, #8b9aa7);
+    --accent: var(--tg-theme-button-color, #3a8ee6);
+    --accent-text: var(--tg-theme-button-text-color, #ffffff);
+    --ok: #3fb950;
+    --bad: #f85149;
+    --warn: #e3b341;
+    --pcb: #1f5f3a;
+    --pcb2: #2a7a4b;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { padding: 12px 16px 24px; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  h1 { font-size: 17px; margin: 0 0 2px; }
+  .sub { color: var(--hint); font-size: 13px; }
+  .steps { display: flex; gap: 6px; margin: 10px 0 12px; }
+  .steps span { flex: 1; height: 6px; border-radius: 3px; background: var(--bg2); }
+  .steps span.ok { background: var(--ok); } .steps span.bad { background: var(--bad); }
+  .steps span.cur { background: var(--accent); }
+  .card { background: var(--bg2); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+  .title { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
+  .info { font-size: 14px; }
+  .info b { color: var(--accent); }
+  .timer { height: 4px; border-radius: 2px; background: var(--bg2); margin: 8px 0; overflow: hidden; }
+  .timer i { display: block; height: 100%; width: 100%; background: var(--warn); transform-origin: left; }
+  .board { position: relative; width: 100%; max-width: 420px; aspect-ratio: 1 / 1; margin: 0 auto 10px;
+    border-radius: 16px; background: radial-gradient(circle at 30% 20%, var(--pcb2), var(--pcb));
+    overflow: hidden; touch-action: none; box-shadow: inset 0 0 0 2px rgba(255,255,255,.06); }
+  @supports not (aspect-ratio: 1 / 1) { .board { height: min(92vw, 420px); } }
+  .board.lid { background: linear-gradient(145deg, #3b3f46, #24272c); }
+  .abs { position: absolute; transform: translate(-50%, -50%); }
+  .btn { display: block; width: 100%; padding: 13px; border: 0; border-radius: 12px; font-size: 16px;
+    font-weight: 600; background: var(--accent); color: var(--accent-text); margin-top: 8px; touch-action: none; }
+  .btn.alt { background: var(--bg2); color: var(--text); }
+  .btn:disabled { opacity: .5; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .row .btn { flex: 1 1 40%; }
+  .screw { width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #d9dde3, #7d848f);
+    box-shadow: 0 2px 4px rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: #222; font-size: 15px; }
+  .screw::after { content: ""; position: absolute; width: 22px; height: 4px; background: #444; border-radius: 2px;
+    transform: rotate(var(--rot, 0deg)); opacity: .55; }
+  .screw.done { opacity: 0; transition: opacity .3s, transform .3s; transform: translate(-50%, -50%) scale(.3); }
+  .dust { width: 38px; height: 38px; border-radius: 50%; background: radial-gradient(circle, rgba(160,150,135,.95), rgba(120,110,95,.5) 60%, transparent 72%);
+    pointer-events: none; transition: opacity .25s, transform .25s; }
+  .dust.gone { opacity: 0; transform: translate(-50%, -50%) scale(1.8); }
+  .chip { position: absolute; left: 20%; top: 20%; width: 60%; height: 60%; background: #1d1d1f; border-radius: 6px;
+    box-shadow: 0 0 0 3px #555, 0 4px 10px rgba(0,0,0,.6); }
+  .grid { position: absolute; inset: 0; display: grid; }
+  .cell { pointer-events: none; }
+  .cell.oldpaste { background: #9a9a8e; } .cell.clean { background: transparent; }
+  .cell.paste { background: #c9cdd2; } .cell.spill { background: rgba(201,205,210,.85); }
+  .slot { width: 18%; height: 22%; border: 2px dashed rgba(255,255,255,.5); border-radius: 8px; display: flex;
+    align-items: flex-end; justify-content: center; font-size: 13px; padding-bottom: 4px; }
+  .slot.filled { border-style: solid; }
+  .wire { padding: 12px; border-radius: 10px; font-weight: 700; color: #111; text-align: center; flex: 1 1 40%; border: 0; font-size: 15px; }
+  .offer { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 12px;
+    background: var(--bg); margin-top: 8px; font-family: ui-monospace, Menlo, monospace; font-size: 15px; border: 2px solid transparent; }
+  .offer small { color: var(--hint); font-family: inherit; }
+  .tag { display: inline-block; font-family: ui-monospace, Menlo, monospace; background: #f3f0e0; color: #222;
+    padding: 6px 10px; border-radius: 6px; font-weight: 700; letter-spacing: 1px; }
+  .socket { width: 34%; height: 14%; background: #f0f0f0; color: #222; border-radius: 6px; display: flex;
+    align-items: center; justify-content: center; font-weight: 700; font-size: 14px; box-shadow: 0 2px 0 #999; }
+  .gauge { position: absolute; left: 12%; top: 8%; width: 16%; height: 84%; background: #111; border-radius: 10px; overflow: hidden; }
+  .gauge .band { position: absolute; left: 0; right: 0; background: rgba(63,185,80,.45); }
+  .gauge .red { position: absolute; left: 0; right: 0; height: 3px; background: var(--bad); }
+  .gauge .fill { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(0deg, #f0883e, #f85149); }
+  .bigtemp { position: absolute; left: 62%; top: 40%; font-size: 40px; font-weight: 800; transform: translate(-50%, -50%); }
+  .pin { width: 13%; height: 30%; background: linear-gradient(#c9a227, #8a6d12); border-radius: 4px; }
+  .pin.good { background: linear-gradient(#e8e8e8, #a9a9a9); box-shadow: 0 0 8px #fff; }
+  .pin.bad { background: linear-gradient(#5a3a1a, #2a1a0a); }
+  .pin .pr { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,.55); }
+  .pin .zone { position: absolute; left: -6px; right: -6px; height: 2px; background: var(--ok); }
+  .point { width: 64px; height: 64px; border-radius: 50%; background: #c0392b; border: 4px solid #eee; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; text-align: center; }
+  .reading { font-family: ui-monospace, Menlo, monospace; font-size: 13px; background: #000; color: #7CFC00;
+    padding: 3px 6px; border-radius: 4px; }
+  .nand { position: absolute; left: 22%; top: 18%; width: 56%; height: 64%; background: #111; border-radius: 6px; }
+  .npin { width: 15%; height: 9%; background: #c0c0c0; color: #111; font-size: 11px; font-weight: 700; display: flex;
+    align-items: center; justify-content: center; border-radius: 2px; }
+  .npin.on { background: var(--ok); }
+  .bar { position: relative; height: 46px; border-radius: 10px; background: #111; overflow: hidden; margin: 14px 0; }
+  .bar .win { position: absolute; top: 0; bottom: 0; background: rgba(63,185,80,.55); }
+  .bar .mark { position: absolute; top: 0; bottom: 0; width: 4px; background: #fff; }
+  .toast { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); padding: 16px 22px; border-radius: 14px;
+    font-weight: 700; font-size: 18px; color: #fff; z-index: 10; text-align: center; max-width: 85%; }
+  .toast.ok { background: rgba(46,160,67,.95); } .toast.bad { background: rgba(218,54,51,.95); }
+  .hidden { display: none !important; }
+  .center { text-align: center; }
+</style>
+</head>
+<body>
+<h1 id="hdr">🛠 Мастерская</h1>
+<div class="sub" id="subhdr"></div>
+<div class="steps" id="steps"></div>
+<div id="stage"></div>
+
+<script>
+"use strict";
+// ---------------------------------------------------------------- параметры из ссылки
+const Q = new URLSearchParams(location.search);
+const REP = Q.get("r") || "", KEY = Q.get("k") || "", SEED = parseInt(Q.get("s") || "0", 10) || 0;
+const PLAN = (Q.get("p") || "").split(",").filter(Boolean).slice(0, 10);
+const TG = window.Telegram && window.Telegram.WebApp;
+const KINDS = {
+  screws: "🪛 Разборка корпуса", dust: "💨 Чистка от пыли", fan: "🌀 Подключение кулера",
+  oldpaste: "🧽 Снятие старой пасты", paste: "🧴 Новая термопаста", part: "🛒 Заказ детали",
+  ribbon: "🔌 Установка шлейфа", heat: "🔥 Прогрев феном", solder: "🧑‍🏭 Пайка контактов",
+  measure: "📟 Замеры мультиметром", probe: "🔗 Подключение программатора", flash: "💾 Запись NAND",
+  test: "✅ Финальная проверка",
+};
+
+// ---------------------------------------------------------------- случайность с зерном (одинаковые задания при повторном открытии)
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function makeRnd(seed) {
+  const r = mulberry32(seed);
+  return {
+    f: r,
+    int: (a, b) => a + Math.floor(r() * (b - a + 1)),
+    pick: arr => arr[Math.floor(r() * arr.length)],
+    shuffle: arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+    sample: (arr, n) => makeRnd(Math.floor(r() * 2 ** 31)).shuffle(arr).slice(0, n),
+  };
+}
+
+// ---------------------------------------------------------------- хранилище прогресса (нельзя переиграть проваленный этап)
+const store = {
+  key: `rep_${REP}_${SEED}`,
+  load() {
+    return new Promise(res => {
+      const local = () => { try { res(JSON.parse(localStorage.getItem(this.key) || "null")); } catch (e) { res(null); } };
+      if (TG && TG.CloudStorage && TG.isVersionAtLeast && TG.isVersionAtLeast("6.9")) {
+        try { TG.CloudStorage.getItem(this.key, (err, v) => { if (err || !v) return local(); try { res(JSON.parse(v)); } catch (e) { local(); } }); }
+        catch (e) { local(); }
+      } else local();
+    });
+  },
+  save(v) {
+    const s = JSON.stringify(v);
+    try { localStorage.setItem(this.key, s); } catch (e) { /* приватный режим */ }
+    if (TG && TG.CloudStorage && TG.isVersionAtLeast && TG.isVersionAtLeast("6.9")) { try { TG.CloudStorage.setItem(this.key, s); } catch (e) { /* нет облака */ } }
+  },
+};
+
+// ---------------------------------------------------------------- мелочи интерфейса
+const $stage = document.getElementById("stage");
+function el(tag, cls, parent, html) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html !== undefined) e.innerHTML = html;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function at(e, x, y) { e.style.left = x + "%"; e.style.top = y + "%"; return e; }
+function haptic(kind) {
+  try {
+    if (!TG || !TG.HapticFeedback) return;
+    if (kind === "ok" || kind === "bad") TG.HapticFeedback.notificationOccurred(kind === "ok" ? "success" : "error");
+    else TG.HapticFeedback.impactOccurred(kind || "light");
+  } catch (e) { /* старый клиент */ }
+}
+function toast(ok, text) {
+  return new Promise(res => {
+    haptic(ok ? "ok" : "bad");
+    const t = el("div", "toast " + (ok ? "ok" : "bad"), document.body, text);
+    setTimeout(() => { t.remove(); res(); }, 1300);
+  });
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function point(e) { const p = e.touches ? e.touches[0] : e; return { x: p.clientX, y: p.clientY }; }
+function hitAll(board, e, cls) {
+  const p = point(e), out = [];
+  for (const n of board.querySelectorAll("." + cls)) {
+    const r = n.getBoundingClientRect(), pad = 8;
+    if (p.x >= r.left - pad && p.x <= r.right + pad && p.y >= r.top - pad && p.y <= r.bottom + pad) out.push(n);
+  }
+  return out;
+}
+function swipe(board, onMove) {   // вызывает onMove(event) при движении пальца с зажатием
+  let down = false;
+  const start = e => { down = true; e.preventDefault(); onMove(e); };
+  const move = e => { if (down) { e.preventDefault(); onMove(e); } };
+  const stop = () => { down = false; };
+  board.addEventListener("pointerdown", start); board.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", stop); window.addEventListener("pointercancel", stop);
+}
+function hold(btn, onDown, onUp) {
+  const down = e => { e.preventDefault(); onDown(); };
+  const up = () => onUp();
+  btn.addEventListener("pointerdown", down);
+  btn.addEventListener("pointerup", up); btn.addEventListener("pointerleave", up); btn.addEventListener("pointercancel", up);
+  btn.addEventListener("contextmenu", e => e.preventDefault());
+}
+
+// Каркас этапа: заголовок, подсказка, таймер, поле
+function frame(title, info, seconds) {
+  $stage.innerHTML = "";
+  const card = el("div", "card", $stage);
+  el("div", "title", card, title);
+  const infoEl = el("div", "info", card, info);
+  const timer = el("div", "timer" + (seconds ? "" : " hidden"), $stage);
+  const bar = el("i", "", timer);
+  const board = el("div", "board", $stage);
+  const controls = el("div", "", $stage);
+  let raf = 0, t0 = 0, onTimeout = null;
+  const tick = now => {
+    if (!t0) t0 = now;
+    const left = 1 - (now - t0) / (seconds * 1000);
+    bar.style.transform = `scaleX(${Math.max(0, left)})`;
+    if (left <= 0) { if (onTimeout) { const f = onTimeout; onTimeout = null; f(); } return; }
+    raf = requestAnimationFrame(tick);
+  };
+  return {
+    card, infoEl, board, controls,
+    startTimer(fn) { if (!seconds) return; onTimeout = fn; raf = requestAnimationFrame(tick); },
+    stop() { cancelAnimationFrame(raf); onTimeout = null; },
+  };
+}
+// Этап-«решение»: возвращает Promise<boolean>
+function stageDone(f, resolve) {
+  let done = false;
+  return async (ok, msg) => {
+    if (done) return;
+    done = true; f.stop();
+    await toast(ok, msg || (ok ? "✅ Готово!" : "❌ Ошибка"));
+    resolve(ok);
+  };
+}
+
+// ================================================================ МИНИ-ИГРЫ
+const GAMES = {};
+
+// 🪛 Винты: выкрутить по номерам, каждый — зажать на полсекунды
+GAMES.screws = (rnd) => new Promise(resolve => {
+  const n = rnd.int(4, 6);
+  const f = frame(KINDS.screws, `Выкрути все <b>${n}</b> винтов <b>по порядку номеров</b>. Каждый винт — зажми и держи, пока не выкрутится.`, 30);
+  f.board.classList.add("lid");
+  const done = stageDone(f, resolve);
+  const slots = rnd.shuffle([[18, 18], [50, 14], [82, 18], [16, 50], [84, 50], [18, 82], [50, 86], [82, 82], [50, 50]]).slice(0, n);
+  const nums = rnd.shuffle([...Array(n).keys()].map(i => i + 1));
+  let next = 1;
+  slots.forEach(([x, y], i) => {
+    const s = at(el("div", "screw abs", f.board, nums[i]), x, y);
+    s.style.setProperty("--rot", rnd.int(0, 180) + "deg");
+    let timer = null, angle = 0;
+    hold(s, () => {
+      if (s.classList.contains("done")) return;
+      if (nums[i] !== next) return done(false, `❌ Не тот винт! Нужен №${next}`);
+      haptic("light");
+      timer = setInterval(() => {
+        angle += 40; s.style.setProperty("--rot", angle + "deg");
+        if (angle >= 400) {
+          clearInterval(timer); timer = null; s.classList.add("done"); haptic("medium"); next++;
+          if (next > n) done(true, "✅ Крышка снята!");
+        }
+      }, 50);
+    }, () => { if (timer) { clearInterval(timer); timer = null; } });
+  });
+  f.startTimer(() => done(false, "⌛ Не успел разобрать корпус"));
+});
+
+// 💨 Пыль: провести пальцем по всем комкам пыли
+GAMES.dust = (rnd) => new Promise(resolve => {
+  const f = frame(KINDS.dust, "Проведи пальцем по радиатору и сдуй <b>всю</b> пыль.", 14);
+  const done = stageDone(f, resolve);
+  const n = 22;
+  for (let i = 0; i < n; i++) at(el("div", "dust abs live", f.board), rnd.int(8, 92), rnd.int(8, 92));
+  let left = n;
+  swipe(f.board, e => {
+    for (const d of hitAll(f.board, e, "live")) {
+      d.classList.remove("live"); d.classList.add("gone"); left--; haptic("light");
+    }
+    if (left <= 0) done(true, "✅ Радиатор чистый!");
+  });
+  f.startTimer(() => done(false, `⌛ Осталось пыли: ${left}`));
+});
+
+// 🌀 Кулер: провода по схеме, по порядку пинов
+GAMES.fan = (rnd) => new Promise(resolve => {
+  const colors = [["чёрный", "#222", "#fff"], ["жёлтый", "#f1c40f"], ["синий", "#3498db", "#fff"], ["красный", "#e74c3c", "#fff"], ["зелёный", "#2ecc71"], ["белый", "#ecf0f1"]];
+  const order = rnd.sample(colors, 4);
+  const f = frame(KINDS.fan, "Схема разъёма: " + order.map((c, i) => `<b>${i + 1}</b> — ${c[0]}`).join(", ") +
+    ".<br>Вставляй провода <b>по порядку пинов</b>: 1, 2, 3, 4.", 20);
+  const done = stageDone(f, resolve);
+  const slots = [0, 1, 2, 3].map(i => at(el("div", "slot abs", f.board, `пин ${i + 1}`), 20 + i * 20, 40));
+  at(el("div", "abs", f.board, "<span class='sub'>🌀 разъём кулера</span>"), 50, 18);
+  const row = el("div", "row", f.controls);
+  let pin = 0;
+  rnd.shuffle(order).forEach(c => {
+    const b = el("button", "wire", row, c[0]);
+    b.style.background = c[1]; if (c[2]) b.style.color = c[2];
+    b.onclick = () => {
+      if (c !== order[pin]) return done(false, `❌ На пин ${pin + 1} идёт ${order[pin][0]} провод`);
+      slots[pin].classList.add("filled"); slots[pin].style.background = c[1]; b.disabled = true; haptic("medium"); pin++;
+      if (pin === 4) done(true, "✅ Кулер подключён!");
+    };
+  });
+  f.startTimer(() => done(false, "⌛ Не успел подключить"));
+});
+
+// 🧽 Старая паста: стереть пальцем
+function pasteGrid(f, size) {
+  const chip = el("div", "chip", f.board);
+  const grid = el("div", "grid", chip);
+  grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+  const cells = [];
+  for (let i = 0; i < size * size; i++) cells.push(el("div", "cell", grid));
+  return { chip, cells };
+}
+function cellsUnder(e, cells, radius) {
+  const p = point(e), out = [];
+  for (const c of cells) {
+    const r = c.getBoundingClientRect();
+    const cx = (r.left + r.right) / 2, cy = (r.top + r.bottom) / 2;
+    if (Math.hypot(cx - p.x, cy - p.y) <= radius) out.push(c);
+  }
+  return out;
+}
+GAMES.oldpaste = (rnd) => new Promise(resolve => {
+  const f = frame(KINDS.oldpaste, "Сотри засохшую пасту салфеткой со спиртом. Нужно очистить <b>почти весь</b> кристалл (90%).", 16);
+  const done = stageDone(f, resolve);
+  const { cells } = pasteGrid(f, 9);
+  cells.forEach(c => c.classList.add("oldpaste"));
+  const need = Math.ceil(cells.length * 0.9);
+  let cleaned = 0;
+  const radius = () => f.board.clientWidth * 0.07;
+  swipe(f.board, e => {
+    for (const c of cellsUnder(e, cells, radius())) if (c.classList.contains("oldpaste")) { c.classList.remove("oldpaste"); cleaned++; }
+    f.infoEl.innerHTML = `Сотри засохшую пасту. Очищено: <b>${Math.floor(100 * cleaned / cells.length)}%</b> из 90%`;
+    if (cleaned >= need) done(true, "✅ Кристалл чистый!");
+  });
+  f.startTimer(() => done(false, `⌛ Очищено только ${Math.floor(100 * cleaned / cells.length)}%`));
+});
+
+// 🧴 Новая паста: покрыть кристалл, не заляпав плату
+GAMES.paste = (rnd) => new Promise(resolve => {
+  const f = frame(KINDS.paste, "Нанеси пасту пальцем: покрой <b>не меньше 80%</b> кристалла и <b>не заляпай</b> плату вокруг. Потом жми «Готово».", 25);
+  const done = stageDone(f, resolve);
+  const size = 10;
+  const grid = el("div", "grid", f.board);
+  grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+  const cells = [];
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const c = el("div", "cell", grid);
+    c.dataset.chip = (x >= 2 && x <= 7 && y >= 2 && y <= 7) ? "1" : "0";
+    cells.push(c);
+  }
+  el("div", "chip", f.board).style.zIndex = 0;
+  grid.style.zIndex = 1;
+  const chipCells = cells.filter(c => c.dataset.chip === "1");
+  let covered = 0, spill = 0;
+  const radius = () => f.board.clientWidth * 0.055;
+  swipe(f.board, e => {
+    for (const c of cellsUnder(e, cells, radius())) {
+      if (c.dataset.p) continue;
+      c.dataset.p = "1";
+      if (c.dataset.chip === "1") { c.classList.add("paste"); covered++; } else { c.classList.add("spill"); spill++; }
+    }
+    f.infoEl.innerHTML = `Покрыто: <b>${Math.floor(100 * covered / chipCells.length)}%</b> (нужно 80%). Заляпано мимо: <b>${spill}</b> (можно до 6)`;
+  });
+  const check = () => {
+    const pct = covered / chipCells.length;
+    if (spill > 6) return done(false, "❌ Заляпал плату пастой");
+    if (pct < 0.8) return done(false, `❌ Покрыто только ${Math.floor(pct * 100)}%`);
+    done(true, "✅ Идеальный слой!");
+  };
+  el("button", "btn", f.controls, "Готово").onclick = check;
+  f.startTimer(check);
+});
+
+// 🛒 Заказ детали: найти точно такую же маркировку
+const PARTS = { drive: ["лазерная головка", ["KEM-", "KES-", "SF-HD"]], hdmi: ["HDMI-разъём", ["HDMI-", "HDM-", "CN-H"]],
+  cable: ["шлейф", ["FPC-", "FFC-", "LVDS-"]], gpu: ["графический чип", ["CXD", "GFX-", "RSX-"]] };
+function variants(rnd, code, count) {
+  const out = new Set(), letters = "ABCDEFGHKMPR";
+  for (let k = 0; k < 60 && out.size < count; k++) {
+    const s = code.split(""), digits = s.map((c, i) => /\d/.test(c) ? i : -1).filter(i => i >= 0);
+    const how = rnd.int(0, 2);
+    if (how === 0 && digits.length > 1) { const [a, b] = rnd.sample(digits, 2); [s[a], s[b]] = [s[b], s[a]]; }
+    else if (how === 1) { const i = s.length - 1 - rnd.int(0, 1); s[i] = rnd.pick(letters.replace(s[i], "").split("")); }
+    else { const i = rnd.pick(digits); s[i] = rnd.pick("0123456789".replace(s[i], "").split("")); }
+    const v = s.join(""); if (v !== code) out.add(v);
+  }
+  return [...out];
+}
+GAMES.part = (rnd, arg) => new Promise(resolve => {
+  let label, offers, what;
+  if (arg === "psu") {
+    const volts = [5, 12, 19], amps = [3.5, 5, 8.5, 10.5, 15];
+    const v = rnd.pick(volts), a = rnd.pick(amps), fmt = (x, y) => `${x}V ⎓ ${y}A`;
+    label = fmt(v, a); what = "блок питания";
+    const set = new Set([label]);
+    while (set.size < 4) set.add(fmt(rnd.pick(volts), rnd.pick(amps)));
+    offers = [...set];
+  } else {
+    const [name, prefixes] = PARTS[arg] || PARTS.drive;
+    what = name;
+    label = rnd.pick(prefixes) + rnd.int(100, 999) + rnd.pick("ABCDEFGHKMPR".split("")) + rnd.pick("ABCDEFGHKMPR".split(""));
+    offers = [label, ...variants(rnd, label, 3)];
+  }
+  const f = frame(KINDS.part, `Нужна новая деталь — <b>${what}</b>. Найди у поставщиков <b>точно такую же</b> маркировку.`, 25);
+  const done = stageDone(f, resolve);
+  f.board.style.aspectRatio = "auto"; f.board.style.background = "transparent"; f.board.style.boxShadow = "none";
+  el("div", "center", f.board, `Старая деталь: <span class="tag">${esc(label)}</span>`).style.padding = "14px 0";
+  const sellers = ["ЧипДип", "Радиодетали.ру", "AliExpress", "Барахолка"];
+  rnd.shuffle(offers).forEach((o, i) => {
+    const row = el("div", "offer", f.controls, `<span>${esc(o)}</span><small>${sellers[i]} · ${rnd.int(4, 40) * 100} 💰</small>`);
+    row.onclick = () => o === label ? done(true, "✅ Деталь подошла!") : done(false, "❌ Не та маркировка — деталь не подошла");
+  });
+  f.startTimer(() => done(false, "⌛ Поставщик закрылся"));
+});
+
+// 🔌 Шлейф: найти разъём по бирке
+GAMES.ribbon = (rnd) => new Promise(resolve => {
+  const pinsAll = [12, 18, 24, 30, 40], name = () => rnd.pick(["J", "CN", "FPC"]) + rnd.int(1, 12);
+  const right = `${name()} · ${rnd.pick(pinsAll)} pin`;
+  const [conn, pins] = right.split(" · ");
+  const set = new Set([right]);
+  let other = name(); while (`${other} · ${pins}` === right) other = name();
+  set.add(`${conn} · ${rnd.pick(pinsAll.filter(p => p + " pin" !== pins))} pin`);
+  set.add(`${other} · ${pins}`);
+  while (set.size < 4) set.add(`${name()} · ${rnd.pick(pinsAll)} pin`);
+  const f = frame(KINDS.ribbon, `На шлейфе бирка <span class="tag">${esc(right)}</span><br>Вставь его в нужный разъём на плате.`, 18);
+  const done = stageDone(f, resolve);
+  const spots = [[28, 22], [72, 22], [28, 70], [72, 70]];
+  rnd.shuffle([...set]).forEach((s, i) => {
+    const b = at(el("div", "socket abs", f.board, esc(s)), spots[i][0], spots[i][1]);
+    b.onclick = () => s === right ? done(true, "✅ Щёлк! Шлейф на месте") : done(false, "❌ Не тот разъём");
+  });
+  f.startTimer(() => done(false, "⌛ Не успел"));
+});
+
+// 🔥 Фен: держать температуру в зелёной зоне
+GAMES.heat = (rnd) => new Promise(resolve => {
+  const solders = [["Sn63Pb37 (свинцовый)", 183], ["SAC305 (бессвинцовый)", 217], ["Sn99.3Cu0.7", 227]];
+  const [sname, mp] = rnd.pick(solders);
+  const lo = mp + 20, hi = mp + 60, burn = mp + 80, max = 360, min = 25, need = 3.0;
+  const f = frame(KINDS.heat, `Припой <b>${sname}</b> плавится при ${mp}°C. Держи температуру в <b>зелёной зоне</b> (${lo}–${hi}°C) <b>3 секунды</b>. Выше ${burn}°C плата вздуется!`, 22);
+  const done = stageDone(f, resolve);
+  const g = el("div", "gauge", f.board);
+  const y = t => 100 * (t - min) / (max - min);
+  const band = el("div", "band", g); band.style.bottom = y(lo) + "%"; band.style.height = (y(hi) - y(lo)) + "%";
+  const red = el("div", "red", g); red.style.bottom = y(burn) + "%";
+  const fill = el("div", "fill", g);
+  const big = el("div", "bigtemp", f.board, "25°C");
+  const prog = at(el("div", "abs sub", f.board, ""), 62, 62);
+  let temp = min, heating = false, inZone = 0, last = performance.now(), stopped = false;
+  const btn = el("button", "btn", f.controls, "🔥 Держи, чтобы греть");
+  hold(btn, () => { heating = true; haptic("light"); }, () => { heating = false; });
+  const loop = now => {
+    if (stopped) return;
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    temp += heating ? (55 + rnd.f() * 20) * dt : -32 * dt;
+    temp = Math.max(min, Math.min(max, temp));
+    if (temp >= lo && temp <= hi) inZone += dt;
+    fill.style.height = y(temp) + "%";
+    big.textContent = Math.round(temp) + "°C";
+    big.style.color = temp > hi ? "var(--bad)" : temp >= lo ? "var(--ok)" : "var(--text)";
+    prog.textContent = `в зоне: ${inZone.toFixed(1)} / ${need} с`;
+    if (temp > burn) { stopped = true; return done(false, "💥 Перегрел — плата вздулась!"); }
+    if (inZone >= need) { stopped = true; return done(true, "✅ Припой расплавился — чип снят!"); }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+  f.startTimer(() => { stopped = true; done(false, "⌛ Чип так и не прогрелся"); });
+});
+
+// 🧑‍🏭 Пайка: зажать контакт и отпустить, когда полоска в зелёной зоне
+GAMES.solder = (rnd) => new Promise(resolve => {
+  const n = 5;
+  const f = frame(KINDS.solder, "Пропаяй все контакты: <b>зажми</b> контакт паяльником и <b>отпусти</b>, когда полоска дойдёт до зелёной зоны. Передержишь — сожжёшь, рано отпустишь — холодная пайка.", 35);
+  const done = stageDone(f, resolve);
+  let finished = 0, bad = 0;
+  for (let i = 0; i < n; i++) {
+    const p = at(el("div", "pin abs", f.board), 14 + i * 18, 50);
+    const pr = el("div", "pr", p);
+    const zl = el("div", "zone", p), zh = el("div", "zone", p);
+    const low = 0.55 + rnd.f() * 0.1, high = low + 0.25, speed = 0.7 + rnd.f() * 0.6;
+    zl.style.bottom = low * 100 + "%"; zh.style.bottom = high * 100 + "%";
+    let v = 0, timer = null, state = 0;
+    const finish = ok => {
+      clearInterval(timer); timer = null; state = 2; finished++;
+      p.classList.add(ok ? "good" : "bad"); if (!ok) bad++;
+      haptic(ok ? "medium" : "heavy");
+      if (finished === n) done(bad === 0, bad === 0 ? "✅ Все контакты блестят!" : `❌ Плохих контактов: ${bad}`);
+    };
+    hold(p, () => {
+      if (state) return; state = 1;
+      timer = setInterval(() => {
+        v += 0.03 * speed; pr.style.height = Math.min(100, v * 100) + "%";
+        if (v >= 1) finish(false);
+      }, 30);
+    }, () => { if (state === 1 && timer) finish(v >= low && v <= high); });
+  }
+  f.startTimer(() => done(false, "⌛ Паяльник остыл"));
+});
+
+// 📟 Мультиметр: замерить линии и найти неисправную
+GAMES.measure = (rnd) => new Promise(resolve => {
+  const lines = rnd.sample([["12V", 12.0], ["5V", 5.0], ["3.3V", 3.3], ["1.8V", 1.8]], 3);
+  const bad = rnd.int(0, 2);
+  const values = lines.map(([, nom], i) => i === bad ? (rnd.f() < 0.5 ? 0 : nom * (0.3 + rnd.f() * 0.3)) : nom * (0.98 + rnd.f() * 0.04));
+  const f = frame(KINDS.measure, "Коснись щупом каждой контрольной точки, посмотри напряжение и выбери <b>неисправную линию</b>.", 30);
+  const done = stageDone(f, resolve);
+  const spots = [[25, 35], [75, 35], [50, 75]];
+  const measured = new Set();
+  const choices = el("div", "row", f.controls);
+  const buttons = lines.map(([label], i) => {
+    const b = el("button", "btn alt", choices, `Линия ${label}`);
+    b.disabled = true;
+    b.onclick = () => i === bad ? done(true, "✅ Нашёл неисправность!") : done(false, `❌ Неисправна линия ${lines[bad][0]}`);
+    return b;
+  });
+  lines.forEach(([label], i) => {
+    const pt = at(el("div", "point abs", f.board, label), spots[i][0], spots[i][1]);
+    const rd = at(el("div", "reading abs hidden", f.board, values[i].toFixed(2) + " В"), spots[i][0], spots[i][1] + 14);
+    pt.onclick = () => {
+      rd.classList.remove("hidden"); haptic("light"); measured.add(i);
+      if (measured.size === lines.length) buttons.forEach(b => { b.disabled = false; });
+    };
+  });
+  f.startTimer(() => done(false, "⌛ Не успел найти"));
+});
+
+// 🔗 Программатор: подключить щупы по распиновке
+GAMES.probe = (rnd) => new Promise(resolve => {
+  const signals = rnd.sample(["CE", "WE", "RE", "ALE", "CLE", "R/B"], 3);
+  const pins = rnd.sample([...Array(16).keys()].map(i => i + 1), 3);
+  const f = frame(KINDS.probe, "Распиновка NAND: " + signals.map((s, i) => `<b>${s}</b> — пин ${pins[i]}`).join(", ") +
+    `.<br>Подключи щупы по очереди: <b>${signals.join(" → ")}</b>.`, 25);
+  const done = stageDone(f, resolve);
+  el("div", "nand", f.board);
+  let step = 0;
+  for (let i = 0; i < 16; i++) {
+    const left = i < 8, k = left ? i : 15 - i;
+    const p = at(el("div", "npin abs", f.board, i + 1), left ? 14 : 86, 22 + k * 8);
+    p.onclick = () => {
+      if (i + 1 !== pins[step]) return done(false, `❌ ${signals[step]} — это пин ${pins[step]}`);
+      p.classList.add("on"); haptic("medium"); step++;
+      f.infoEl.innerHTML = step < 3 ? `Подключено: ${signals.slice(0, step).join(", ")}. Теперь <b>${signals[step]}</b> (смотри распиновку выше).` : "Все щупы на месте.";
+      if (step === 3) done(true, "✅ Программатор видит память!");
+    };
+  }
+  f.startTimer(() => done(false, "⌛ Не успел подключить"));
+});
+
+// 💾 Запись NAND: нажимать, когда бегунок в зелёном окне
+GAMES.flash = (rnd) => new Promise(resolve => {
+  const need = 3;
+  const f = frame(KINDS.flash, `Записывай блоки памяти: жми «Записать», когда бегунок в <b>зелёном окне</b>. Нужно ${need} попадания, промахнуться можно один раз.`, 30);
+  const done = stageDone(f, resolve);
+  f.board.style.aspectRatio = "auto"; f.board.style.background = "transparent"; f.board.style.boxShadow = "none";
+  const bar = el("div", "bar", f.board), win = el("div", "win", bar), mark = el("div", "mark", bar);
+  const status = el("div", "center sub", f.board, "");
+  let hits = 0, misses = 0, pos = 0, dir = 1, speed = 0.45, w0 = 0, w1 = 0, stopped = false, last = performance.now();
+  const newWindow = () => { const w = 0.2 - hits * 0.03; w0 = 0.1 + rnd.f() * (0.8 - w); w1 = w0 + w; win.style.left = w0 * 100 + "%"; win.style.width = w * 100 + "%"; };
+  newWindow();
+  const loop = now => {
+    if (stopped) return;
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    pos += dir * speed * dt; if (pos > 1) { pos = 1; dir = -1; } if (pos < 0) { pos = 0; dir = 1; }
+    mark.style.left = pos * 100 + "%";
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+  const btn = el("button", "btn", f.controls, "💾 Записать блок");
+  btn.onclick = () => {
+    if (pos >= w0 && pos <= w1) { hits++; speed += 0.15; haptic("medium"); newWindow(); }
+    else { misses++; haptic("heavy"); }
+    status.textContent = `Записано: ${hits}/${need} · промахов: ${misses}/1`;
+    if (misses > 1) { stopped = true; return done(false, "❌ Дамп записался с ошибками"); }
+    if (hits >= need) { stopped = true; done(true, "✅ Система записана!"); }
+  };
+  f.startTimer(() => { stopped = true; done(false, "⌛ Запись прервалась"); });
+});
+
+// ✅ Финальная проверка: прочитать показания и принять решение
+GAMES.test = (rnd) => new Promise(resolve => {
+  const c = rnd.int(0, 2);
+  const boot = c === 2 ? rnd.int(70, 110) : rnd.int(15, 55), temp = c === 1 ? rnd.int(86, 99) : rnd.int(45, 76);
+  const answers = ["Всё в норме — отдаём клиенту", "Перегрев — проверить охлаждение", "Долгая загрузка — проверить систему"];
+  const f = frame(KINDS.test, "Посмотри на результаты стресс-теста и реши, что делать.", 25);
+  const done = stageDone(f, resolve);
+  f.board.style.aspectRatio = "auto"; f.board.style.padding = "18px";
+  el("div", "", f.board, `<div class="reading" style="display:inline-block;margin:4px 0">Загрузка: ${boot} с (норма до 60 с)</div><br>` +
+    `<div class="reading" style="display:inline-block;margin:4px 0">Температура: ${temp}°C (норма до 80°C)</div>`);
+  rnd.shuffle([0, 1, 2]).forEach(i => {
+    el("button", "btn alt", f.controls, answers[i]).onclick = () => i === c ? done(true, "✅ Верное решение!") : done(false, `❌ Правильно: ${answers[c].toLowerCase()}`);
+  });
+  f.startTimer(() => done(false, "⌛ Не успел"));
+});
+
+// ================================================================ ход ремонта
+function drawSteps(results, cur) {
+  const box = document.getElementById("steps");
+  box.innerHTML = "";
+  PLAN.forEach((_, i) => el("span", i < results.length ? (results[i] ? "ok" : "bad") : i === cur ? "cur" : "", box));
+}
+
+// Результат возвращается в чат с ботом ссылкой t.me/бот?start=wa_<заявка>_<этапы>_<подпись>:
+// так работает кнопка прямо в сообщении, и боту не нужен свой сервер.
+const BOT = Q.get("bot") || "";
+function send(results) {
+  if (!/^[A-Za-z0-9_]{3,40}$/.test(BOT) || !/^[0-9a-f]{1,16}$/.test(REP) || !/^[0-9a-f]{24}$/.test(KEY)) return false;
+  const link = `https://t.me/${BOT}?start=wa_${REP}_${results.join("")}_${KEY}`;
+  try {
+    if (TG && TG.openTelegramLink) { TG.openTelegramLink(link); setTimeout(() => { try { TG.close(); } catch (e) { /* ok */ } }, 400); }
+    else location.href = link;
+    return true;
+  } catch (e) { return false; }
+}
+
+function finalScreen(results) {
+  drawSteps(results, -1);
+  const ok = results.filter(Boolean).length;
+  $stage.innerHTML = "";
+  const card = el("div", "card center", $stage);
+  el("div", "title", card, ok === results.length ? "🏆 Чистая работа!" : "🔧 Работа закончена");
+  el("div", "info", card, `Этапов без ошибок: <b>${ok}</b> из ${results.length}.<br>Каждая ошибка снижает шанс, что консоль оживёт. Итог решит бросок шанса в боте.`);
+  const b = el("button", "btn", $stage, "📨 Отправить результат");
+  b.onclick = () => {
+    b.disabled = true;
+    if (!send(results)) { b.disabled = false; el("div", "sub center", $stage, "Не получилось отправить. Открой мастерскую кнопкой в чате с ботом."); }
+  };
+}
+
+async function main() {
+  if (TG) { try { TG.ready(); TG.expand(); } catch (e) { /* ok */ } }
+  const sub = document.getElementById("subhdr");
+  if (!REP || !KEY || !PLAN.length || PLAN.some(s => !GAMES[s.split(":")[0]])) {
+    $stage.innerHTML = "<div class='card'>Открой мастерскую кнопкой «🛠 Открыть мастерскую» в чате с ботом.</div>";
+    return;
+  }
+  document.getElementById("hdr").textContent = "🛠 " + (Q.get("n") || "Ремонт");
+  sub.textContent = "Поломка: " + (Q.get("b") || "—");
+  const saved = await store.load();
+  const results = Array.isArray(saved) ? saved.filter(x => x === 0 || x === 1).slice(0, PLAN.length) : [];
+  for (let i = results.length; i < PLAN.length; i++) {
+    drawSteps(results, i);
+    const [kind, arg] = PLAN[i].split(":");
+    const ok = await GAMES[kind](makeRnd((SEED * 31 + i * 7919) >>> 0), arg);
+    results.push(ok ? 1 : 0);
+    store.save(results);
+  }
+  finalScreen(results);
+}
+main();
+</script>
+</body>
+</html>
