@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Мастерская</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
     --bg: var(--tg-theme-bg-color, #17212b);
@@ -33,6 +32,9 @@
   .title { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
   .info { font-size: 14px; }
   .info b { color: var(--accent); }
+  .status { min-height: 20px; line-height: 20px; font-size: 13px; text-align: center; color: var(--hint);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+  .status b { color: var(--text); }
   .timer { height: 4px; border-radius: 2px; background: var(--bg2); margin: 8px 0; overflow: hidden; }
   .timer i { display: block; height: 100%; width: 100%; background: var(--warn); transform-origin: left; }
   .board { position: relative; width: 100%; max-width: 420px; aspect-ratio: 1 / 1; margin: 0 auto 10px;
@@ -98,6 +100,50 @@
     font-weight: 700; font-size: 18px; color: #fff; z-index: 10; text-align: center; max-width: 85%; }
   .toast.ok { background: rgba(46,160,67,.95); } .toast.bad { background: rgba(218,54,51,.95); }
   .hidden { display: none !important; }
+  /* ---- новые мини-игры ---- */
+  .spot { width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle, #5fbf6a, #2f7d3a 60%, transparent 72%);
+    pointer-events: none; transition: opacity .2s; }
+  .slider { width: 100%; height: 44px; margin-top: 10px; }
+  .meter { position: absolute; left: 8%; right: 8%; height: 18px; border-radius: 9px; background: #111; overflow: hidden; }
+  .meter i { position: absolute; left: 0; top: 0; bottom: 0; background: #3a8ee6; }
+  .ring { width: 46%; aspect-ratio: 1; border-radius: 50%; border: 3px dashed rgba(255,255,255,.35); }
+  .ring.in { border-color: var(--ok); }
+  .knob { width: 14%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #666, #111);
+    box-shadow: 0 0 0 4px #333; pointer-events: none; }
+  .crack { position: absolute; inset: 0; pointer-events: none; }
+  .fuse { width: 18%; height: 30%; border-radius: 8px; background: linear-gradient(90deg, #ccc, #fff 40%, #ccc);
+    display: flex; align-items: flex-end; justify-content: center; font-weight: 700; color: #222; padding-bottom: 4px; }
+  .fuse.beep { box-shadow: 0 0 0 4px var(--ok); } .fuse.mute { box-shadow: 0 0 0 4px var(--bad); }
+  /* ---- площадка запчастей ---- */
+  .shopcard { background: var(--bg); border-radius: 12px; padding: 12px; margin-top: 8px; border: 2px solid transparent; }
+  .shopcard b { font-size: 16px; } .shopcard .pros { color: var(--ok); font-size: 13px; } .shopcard .cons { color: var(--bad); font-size: 13px; }
+  .rotate { text-align: center; padding: 40px 10px; font-size: 18px; }
+  .rotate .phone { font-size: 64px; display: inline-block; animation: spin 2s ease-in-out infinite; }
+  @keyframes spin { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(90deg); } }
+  .mp { background: #f4f5f7; color: #1b1b1f; border-radius: 14px; overflow: hidden; margin: 0 -8px; }
+  .mp-top { padding: 10px 12px; color: #fff; display: flex; gap: 10px; align-items: center; }
+  .mp-top b { font-size: 17px; white-space: nowrap; }
+  .mp-search { flex: 1; background: #fff; color: #888; border-radius: 8px; padding: 7px 10px; font-size: 13px; }
+  .mp-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 8px 10px; background: #fff; }
+  .mp-tabs span { white-space: nowrap; padding: 6px 10px; border-radius: 16px; background: #eceef2; font-size: 13px; }
+  .mp-tabs span.on { background: #1b1b1f; color: #fff; }
+  .mp-need { padding: 8px 12px; font-size: 13px; background: #fff7d6; }
+  .mp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; padding: 10px; }
+  .mp-item { background: #fff; border-radius: 10px; padding: 8px; font-size: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .mp-item .em { font-size: 34px; text-align: center; padding: 6px 0; background: #f4f5f7; border-radius: 8px; }
+  .mp-item .pr { font-weight: 800; font-size: 14px; margin-top: 4px; }
+  .mp-item .nm { height: 32px; overflow: hidden; }
+  .mp-page { padding: 14px; background: #fff; }
+  .mp-page .em { font-size: 80px; text-align: center; background: #f4f5f7; border-radius: 12px; padding: 18px 0; }
+  .mp-btn { display: block; width: 100%; border: 0; border-radius: 10px; padding: 13px; font-size: 16px; font-weight: 700;
+    color: #fff; margin-top: 10px; }
+  .iron { font-size: 15px; text-align: center; margin: 10px 0; }
+  .switch { width: 64px; height: 34px; border-radius: 17px; background: #555; position: relative; display: inline-block; vertical-align: middle; }
+  .switch i { position: absolute; top: 3px; left: 3px; width: 28px; height: 28px; border-radius: 50%; background: #fff; transition: left .2s; }
+  .switch.on { background: var(--ok); } .switch.on i { left: 33px; }
+  @media (orientation: landscape) and (max-height: 520px) {      /* телефон повёрнут — место под магазин */
+    h1, #subhdr { display: none; } body { padding-top: 6px; } .steps { margin: 2px 0 6px; }
+  }
   .center { text-align: center; }
 </style>
 </head>
@@ -113,13 +159,57 @@
 const Q = new URLSearchParams(location.search);
 const REP = Q.get("r") || "", KEY = Q.get("k") || "", SEED = parseInt(Q.get("s") || "0", 10) || 0;
 const PLAN = (Q.get("p") || "").split(",").filter(Boolean).slice(0, 10);
-const TG = window.Telegram && window.Telegram.WebApp;
+// Своя маленькая связь с Telegram вместо telegram-web-app.js: сайт telegram.org бывает заблокирован,
+// и тогда страница висела бы, пока не загрузится чужой скрипт.
+const TG = (function () {
+  const inTelegram = !!(window.TelegramWebviewProxy || (window.external && "notify" in window.external) ||
+    window.parent !== window || /tgWebApp/.test(location.hash));
+  function post(event, data) {
+    try {
+      if (window.TelegramWebviewProxy && window.TelegramWebviewProxy.postEvent) {
+        window.TelegramWebviewProxy.postEvent(event, data === undefined ? "" : JSON.stringify(data)); return true;
+      }
+      if (window.external && "notify" in window.external) {
+        window.external.notify(JSON.stringify({ eventType: event, eventData: data })); return true;
+      }
+      if (window.parent !== window) {
+        window.parent.postMessage(JSON.stringify({ eventType: event, eventData: data }), "*"); return true;
+      }
+    } catch (e) { /* не в Telegram */ }
+    return false;
+  }
+  // цвета темы Telegram приходят в адресе после «#»
+  try {
+    const h = new URLSearchParams(location.hash.slice(1)).get("tgWebAppThemeParams");
+    if (h) {
+      const theme = JSON.parse(h);
+      for (const k in theme) if (/^[a-z_]+$/.test(k) && /^#[0-9a-fA-F]{3,8}$/.test(theme[k]))
+        document.documentElement.style.setProperty("--tg-theme-" + k.replace(/_/g, "-"), theme[k]);
+    }
+  } catch (e) { /* без темы */ }
+  if (!inTelegram) return null;
+  return {
+    ready() { post("web_app_ready"); },
+    expand() { post("web_app_expand"); },
+    close() { post("web_app_close"); },
+    openTelegramLink(url) {
+      const u = new URL(url);
+      if (!post("web_app_open_tg_link", { path_full: u.pathname + u.search })) location.href = url;
+    },
+    HapticFeedback: {
+      impactOccurred(style) { post("web_app_trigger_haptic_feedback", { type: "impact", impact_style: style }); },
+      notificationOccurred(type) { post("web_app_trigger_haptic_feedback", { type: "notification", notification_type: type }); },
+    },
+  };
+})();
 const KINDS = {
   screws: "🪛 Разборка корпуса", dust: "💨 Чистка от пыли", fan: "🌀 Подключение кулера",
   oldpaste: "🧽 Снятие старой пасты", paste: "🧴 Новая термопаста", part: "🛒 Заказ детали",
   ribbon: "🔌 Установка шлейфа", heat: "🔥 Прогрев феном", solder: "🧑‍🏭 Пайка контактов",
   measure: "📟 Замеры мультиметром", probe: "🔗 Подключение программатора", flash: "💾 Запись NAND",
-  test: "✅ Финальная проверка",
+  test: "✅ Финальная проверка", shop: "🛒 Покупка запчасти", corrosion: "🧪 Чистка окислов", dry: "🌬 Сушка платы",
+  calib: "🎯 Калибровка стика", pry: "🔋 Снятие аккумулятора", glue: "🧴 Склейка корпуса",
+  continuity: "🔊 Прозвонка предохранителей",
 };
 
 // ---------------------------------------------------------------- случайность с зерном (одинаковые задания при повторном открытии)
@@ -146,18 +236,11 @@ function makeRnd(seed) {
 const store = {
   key: `rep_${REP}_${SEED}`,
   load() {
-    return new Promise(res => {
-      const local = () => { try { res(JSON.parse(localStorage.getItem(this.key) || "null")); } catch (e) { res(null); } };
-      if (TG && TG.CloudStorage && TG.isVersionAtLeast && TG.isVersionAtLeast("6.9")) {
-        try { TG.CloudStorage.getItem(this.key, (err, v) => { if (err || !v) return local(); try { res(JSON.parse(v)); } catch (e) { local(); } }); }
-        catch (e) { local(); }
-      } else local();
-    });
+    try { return Promise.resolve(JSON.parse(localStorage.getItem(this.key) || "null")); }
+    catch (e) { return Promise.resolve(null); }
   },
   save(v) {
-    const s = JSON.stringify(v);
-    try { localStorage.setItem(this.key, s); } catch (e) { /* приватный режим */ }
-    if (TG && TG.CloudStorage && TG.isVersionAtLeast && TG.isVersionAtLeast("6.9")) { try { TG.CloudStorage.setItem(this.key, s); } catch (e) { /* нет облака */ } }
+    try { localStorage.setItem(this.key, JSON.stringify(v)); } catch (e) { /* приватный режим */ }
   },
 };
 
@@ -219,6 +302,8 @@ function frame(title, info, seconds) {
   const infoEl = el("div", "info", card, info);
   const timer = el("div", "timer" + (seconds ? "" : " hidden"), $stage);
   const bar = el("i", "", timer);
+  // строка прогресса фиксированной высоты: если менять текст подсказки, поле «прыгает» под пальцем
+  const status = el("div", "status", $stage, "&nbsp;");
   const board = el("div", "board", $stage);
   const controls = el("div", "", $stage);
   let raf = 0, t0 = 0, onTimeout = null;
@@ -230,7 +315,7 @@ function frame(title, info, seconds) {
     raf = requestAnimationFrame(tick);
   };
   return {
-    card, infoEl, board, controls,
+    card, infoEl, board, controls, status,
     startTimer(fn) { if (!seconds) return; onTimeout = fn; raf = requestAnimationFrame(tick); },
     stop() { cancelAnimationFrame(raf); onTimeout = null; },
   };
@@ -345,7 +430,7 @@ GAMES.oldpaste = (rnd) => new Promise(resolve => {
   const radius = () => f.board.clientWidth * 0.07;
   swipe(f.board, e => {
     for (const c of cellsUnder(e, cells, radius())) if (c.classList.contains("oldpaste")) { c.classList.remove("oldpaste"); cleaned++; }
-    f.infoEl.innerHTML = `Сотри засохшую пасту. Очищено: <b>${Math.floor(100 * cleaned / cells.length)}%</b> из 90%`;
+    f.status.innerHTML = `Очищено: <b>${Math.floor(100 * cleaned / cells.length)}%</b> из 90%`;
     if (cleaned >= need) done(true, "✅ Кристалл чистый!");
   });
   f.startTimer(() => done(false, `⌛ Очищено только ${Math.floor(100 * cleaned / cells.length)}%`));
@@ -375,7 +460,7 @@ GAMES.paste = (rnd) => new Promise(resolve => {
       c.dataset.p = "1";
       if (c.dataset.chip === "1") { c.classList.add("paste"); covered++; } else { c.classList.add("spill"); spill++; }
     }
-    f.infoEl.innerHTML = `Покрыто: <b>${Math.floor(100 * covered / chipCells.length)}%</b> (нужно 80%). Заляпано мимо: <b>${spill}</b> (можно до 6)`;
+    f.status.innerHTML = `Покрыто <b>${Math.floor(100 * covered / chipCells.length)}%</b> из 80% · мимо <b>${spill}</b> из 6`;
   });
   const check = () => {
     const pct = covered / chipCells.length;
@@ -556,7 +641,7 @@ GAMES.probe = (rnd) => new Promise(resolve => {
     p.onclick = () => {
       if (i + 1 !== pins[step]) return done(false, `❌ ${signals[step]} — это пин ${pins[step]}`);
       p.classList.add("on"); haptic("medium"); step++;
-      f.infoEl.innerHTML = step < 3 ? `Подключено: ${signals.slice(0, step).join(", ")}. Теперь <b>${signals[step]}</b> (смотри распиновку выше).` : "Все щупы на месте.";
+      f.status.innerHTML = step < 3 ? `Подключено: ${signals.slice(0, step).join(", ")}. Теперь <b>${signals[step]}</b>` : "Все щупы на месте.";
       if (step === 3) done(true, "✅ Программатор видит память!");
     };
   }
@@ -609,6 +694,383 @@ GAMES.test = (rnd) => new Promise(resolve => {
   f.startTimer(() => done(false, "⌛ Не успел"));
 });
 
+// 🧪 Окислы: оттереть щёткой со спиртом все зелёные пятна (каждое — в несколько проходов)
+GAMES.corrosion = (rnd) => new Promise(resolve => {
+  const f = frame(KINDS.corrosion, "Плата в зелёных окислах. Три щёткой со спиртом, пока <b>все пятна</b> не исчезнут — на каждое нужно несколько проходов.", 18);
+  const done = stageDone(f, resolve);
+  const spots = [];
+  for (let i = 0; i < 12; i++) {
+    const sp = at(el("div", "spot abs live", f.board), rnd.int(10, 90), rnd.int(10, 90));
+    sp.dataset.hp = String(rnd.int(3, 6)); spots.push(sp);
+  }
+  let left = spots.length, last = 0;
+  swipe(f.board, e => {
+    const now = performance.now();
+    if (now - last < 60) return;                  // не чаще ~16 раз в секунду — «проходы» щёткой
+    last = now;
+    for (const sp of hitAll(f.board, e, "live")) {
+      const hp = Number(sp.dataset.hp) - 1;
+      sp.dataset.hp = String(hp);
+      sp.style.opacity = String(Math.max(0, hp / 6));
+      if (hp <= 0) { sp.classList.remove("live"); left--; haptic("light"); }
+    }
+    f.status.innerHTML = `Осталось пятен: <b>${left}</b>`;
+    if (left <= 0) done(true, "✅ Плата чистая!");
+  });
+  f.startTimer(() => done(false, `⌛ Осталось пятен: ${left}`));
+});
+
+// 🌬 Сушка: держать фен на таком расстоянии, чтобы температура была в зелёной зоне, пока плата не высохнет
+GAMES.dry = (rnd) => new Promise(resolve => {
+  const lo = rnd.pick([40, 45, 50]), hi = lo + 20;
+  const f = frame(KINDS.dry, `Высуши плату феном. Держи температуру <b>${lo}–${hi}°C</b>: двигай ползунок расстояния. Перегреешь — плату поведёт, слишком холодно — не сохнет.`, 30);
+  const done = stageDone(f, resolve);
+  const big = at(el("div", "bigtemp", f.board, "—"), 50, 30);
+  big.style.left = "50%";
+  const meter = el("div", "meter", f.board); meter.style.top = "62%";
+  const fill = el("i", "", meter); fill.style.width = "100%";
+  const label = at(el("div", "abs sub", f.board, "влажность 100%"), 50, 75);
+  const slider = el("input", "slider", f.controls);
+  slider.type = "range"; slider.min = "2"; slider.max = "40"; slider.value = "40";      // начинаем издалека — холодно
+  el("div", "sub center", f.controls, "← ближе к плате · дальше →");
+  let wet = 100, over = 0, stopped = false, last = performance.now(), drift = 0;
+  const loop = now => {
+    if (stopped) return;
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    drift += (rnd.f() - 0.5) * 6 * dt;  drift = Math.max(-5, Math.min(5, drift));   // фен «гуляет» — подстраивайся
+    const d = Number(slider.value);
+    const temp = Math.round(160 - 3.4 * d + drift);
+    big.textContent = temp + "°C";
+    big.style.color = temp > hi ? "var(--bad)" : temp >= lo ? "var(--ok)" : "var(--text)";
+    if (temp >= lo && temp <= hi) wet -= 9 * dt; else if (temp > hi) { wet -= 12 * dt; over += dt; } else wet -= 1 * dt;
+    wet = Math.max(0, wet);
+    fill.style.width = wet + "%"; label.textContent = `влажность ${Math.ceil(wet)}% · перегрев ${over.toFixed(1)}/2 с`;
+    if (over > 2) { stopped = true; return done(false, "💥 Перегрел — плату повело"); }
+    if (wet <= 0) { stopped = true; return done(true, "✅ Плата сухая!"); }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+  f.startTimer(() => { stopped = true; done(false, "⌛ Плата не успела высохнуть"); });
+});
+
+// 🎯 Калибровка стика: стик дрейфует, удержи точку в центре 3 секунды
+GAMES.calib = (rnd) => new Promise(resolve => {
+  const need = 3;
+  const f = frame(KINDS.calib, "Стик сам уползает в сторону. Веди пальцем по полю и <b>удерживай точку в зелёном круге</b> — всего 3 секунды.", 20);
+  const done = stageDone(f, resolve);
+  const ring = at(el("div", "ring abs", f.board), 50, 50);
+  const knob = at(el("div", "knob abs", f.board), 50, 50);
+  const prog = at(el("div", "abs sub", f.board, ""), 50, 92);
+  let ox = 0, oy = 0, px = null, py = null, inside = 0, t = 0, stopped = false, last = performance.now();
+  const ax = 18 + rnd.f() * 10, ay = 14 + rnd.f() * 10, sx = 0.6 + rnd.f() * 0.6, sy = 0.5 + rnd.f() * 0.6, ph = rnd.f() * 6;
+  f.board.addEventListener("pointerdown", e => { px = e.clientX; py = e.clientY; e.preventDefault(); });
+  f.board.addEventListener("pointermove", e => {
+    if (px === null) return;
+    const w = f.board.clientWidth / 100;
+    ox += (e.clientX - px) / w; oy += (e.clientY - py) / w; px = e.clientX; py = e.clientY;
+    ox = Math.max(-45, Math.min(45, ox)); oy = Math.max(-45, Math.min(45, oy));
+  });
+  window.addEventListener("pointerup", () => { px = null; });
+  const loop = now => {
+    if (stopped) return;
+    const dt = Math.min(0.1, (now - last) / 1000); last = now; t += dt;
+    const x = 50 + ax * Math.sin(t * sx + ph) + ox, y = 50 + ay * Math.cos(t * sy) + oy;
+    at(knob, Math.max(5, Math.min(95, x)), Math.max(5, Math.min(95, y)));
+    const inRing = Math.hypot(x - 50, y - 50) < 15;
+    ring.classList.toggle("in", inRing);
+    if (inRing) inside += dt;
+    prog.textContent = `в центре: ${inside.toFixed(1)} / ${need} с`;
+    if (inside >= need) { stopped = true; return done(true, "✅ Стик откалиброван!"); }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+  f.startTimer(() => { stopped = true; done(false, "⌛ Не удалось удержать стик"); });
+});
+
+// 🔋 Аккумулятор: тянуть вздутую батарею, не перетягивая (иначе прокол)
+GAMES.pry = (rnd) => new Promise(resolve => {
+  const f = frame(KINDS.pry, "Батарея держится на клею. <b>Держи кнопку</b>, чтобы тянуть: клей отходит, только когда натяжение в зелёной зоне. Перетянешь — батарея проколется!", 25);
+  const done = stageDone(f, resolve);
+  const g = el("div", "gauge", f.board);
+  const band = el("div", "band", g); band.style.bottom = "45%"; band.style.height = "25%";
+  const red = el("div", "red", g); red.style.bottom = "85%";
+  const fill = el("div", "fill", g);
+  const big = el("div", "bigtemp", f.board, "0%");
+  const sub = at(el("div", "abs sub", f.board, "клей отошёл: 0%"), 62, 62);
+  let ten = 0, glue = 0, pulling = false, stopped = false, last = performance.now();
+  const rate = 70 + rnd.f() * 30;
+  hold(el("button", "btn", f.controls, "🔋 Держи, чтобы тянуть"), () => { pulling = true; haptic("light"); }, () => { pulling = false; });
+  const loop = now => {
+    if (stopped) return;
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    ten += pulling ? rate * dt : -55 * dt; ten = Math.max(0, Math.min(100, ten));
+    if (ten >= 45 && ten <= 70) glue += 22 * dt;
+    fill.style.height = ten + "%"; big.textContent = Math.round(glue) + "%"; sub.textContent = "натяжение " + Math.round(ten) + "%";
+    if (ten > 85) { stopped = true; return done(false, "💥 Батарея проколота — пошёл дым!"); }
+    if (glue >= 100) { stopped = true; return done(true, "✅ Аккумулятор снят!"); }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+  f.startTimer(() => { stopped = true; done(false, "⌛ Клей так и не отошёл"); });
+});
+
+// 🧴 Склейка: провести пальцем по всей трещине, не размазывая клей мимо
+GAMES.glue = (rnd) => new Promise(resolve => {
+  const f = frame(KINDS.glue, "Проведи пальцем <b>вдоль всей трещины</b> — так ляжет клей. Мимо трещины — клей размазывается (можно чуть-чуть).", 20);
+  f.board.classList.add("lid");
+  const done = stageDone(f, resolve);
+  const pts = [];
+  let x = 10, y = rnd.int(20, 80);
+  for (let i = 0; i <= 12; i++) { pts.push([x, y]); x += 6.6; y = Math.max(10, Math.min(90, y + rnd.int(-14, 14))); }
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 100 100"); svg.setAttribute("class", "crack");
+  const crack = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+  crack.setAttribute("points", pts.map(p => p.join(",")).join(" "));
+  crack.setAttribute("fill", "none"); crack.setAttribute("stroke", "#111"); crack.setAttribute("stroke-width", "1.6");
+  svg.appendChild(crack); f.board.appendChild(svg);
+  const covered = new Set();
+  let spill = 0, lastSpill = 0;
+  const glued = document.createElementNS("http://www.w3.org/2000/svg", "g"); svg.appendChild(glued);
+  swipe(f.board, e => {
+    const r = f.board.getBoundingClientRect(), p = point(e);
+    const gx = (p.x - r.left) / r.width * 100, gy = (p.y - r.top) / r.height * 100;
+    // «рядом с трещиной» — по расстоянию до самой линии, а не до её точек
+    let near = false;
+    for (let i = 1; i < pts.length; i++) {
+      const [x1, y1] = pts[i - 1], [x2, y2] = pts[i];
+      const len2 = (x2 - x1) ** 2 + (y2 - y1) ** 2;
+      const t = Math.max(0, Math.min(1, ((gx - x1) * (x2 - x1) + (gy - y1) * (y2 - y1)) / len2));
+      if (Math.hypot(x1 + t * (x2 - x1) - gx, y1 + t * (y2 - y1) - gy) < 6) { near = true; break; }
+    }
+    pts.forEach((q, i) => { if (Math.hypot(q[0] - gx, q[1] - gy) < 7) { if (!covered.has(i)) {
+      covered.add(i); haptic("light");
+      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", q[0]); c.setAttribute("cy", q[1]); c.setAttribute("r", "3"); c.setAttribute("fill", "rgba(255,255,255,.7)");
+      glued.appendChild(c);
+    } } });
+    const now = performance.now();
+    if (!near && now - lastSpill > 150) { spill++; lastSpill = now; }
+    f.status.innerHTML = `Проклеено: <b>${Math.round(100 * covered.size / pts.length)}%</b> · размазано мимо: <b>${spill}</b> из 8`;
+    if (spill > 8) return done(false, "❌ Весь корпус в клею");
+    if (covered.size === pts.length) done(true, "✅ Трещины не видно!");
+  });
+  f.startTimer(() => done(false, `⌛ Проклеено только ${Math.round(100 * covered.size / pts.length)}%`));
+});
+
+// 🔊 Прозвонка: исправный предохранитель пищит, сгоревший молчит
+GAMES.continuity = (rnd) => new Promise(resolve => {
+  const n = rnd.int(3, 5), bad = rnd.int(0, n - 1);
+  const f = frame(KINDS.continuity, "Мультиметр в режиме прозвонки. Коснись щупами <b>каждого предохранителя</b>: исправный пищит 🔊, сгоревший молчит. Потом выбери сгоревший.", 25);
+  const done = stageDone(f, resolve);
+  const tested = new Set();
+  const row = el("div", "row", f.controls);
+  const btns = [];
+  for (let i = 0; i < n; i++) {
+    const fu = at(el("div", "fuse abs", f.board, "F" + (i + 1)), (i + 1) * 100 / (n + 1), 45);
+    const sound = at(el("div", "abs sub hidden", f.board, i === bad ? "🔇 тишина" : "🔊 пииип"), (i + 1) * 100 / (n + 1), 70);
+    fu.onclick = () => {
+      tested.add(i); sound.classList.remove("hidden");
+      fu.classList.add(i === bad ? "mute" : "beep"); haptic(i === bad ? "heavy" : "light");
+      if (tested.size === n) btns.forEach(b => { b.disabled = false; });
+    };
+    const b = el("button", "btn alt", row, "Менять F" + (i + 1));
+    b.disabled = true;
+    b.onclick = () => i === bad ? done(true, "✅ Нашёл сгоревший!") : done(false, `❌ Сгорел F${bad + 1}`);
+    btns.push(b);
+  }
+  f.startTimer(() => done(false, "⌛ Не успел"));
+});
+
+// ================================================================ 🛒 Площадка запчастей (идея тестера)
+const PART_TYPES = {
+  drive: ["Лазерная головка", "💿"], hdmi: ["HDMI-разъём", "🔌"], cable: ["Шлейф", "🎞"], psu: ["Блок питания", "🔋"],
+  gpu: ["Графический чип", "🧠"], stick: ["Модуль стика", "🕹"], battery: ["Аккумулятор", "🔋"],
+  fuse: ["Предохранитель", "🧯"], cooler: ["Кулер", "🌀"], ram: ["Чип видеопамяти", "💾"],
+};
+const OTHER_PARTS = [["Термопаста Arctic", "🧴"], ["Термопрокладки 1 мм", "🟦"], ["Кнопка питания", "🔘"], ["Динамик 8 Ом", "🔈"],
+  ["Корпус нижний", "📦"], ["Винты Torx (набор)", "🔩"], ["Флюс гелевый", "🧪"], ["Припой 0.5 мм", "🧵"], ["Антенна Wi-Fi", "📡"],
+  ["Вибромотор", "📳"], ["Крестовина кнопок", "➕"], ["Резинка триггера", "⭕"]];
+const GOODS = {
+  fen: ["💨 Фены", "💨", ["Фен Turbo 2200", "Фен-щётка Стайл", "Дорожный фен Мини", "Фен Профи Салон", "Фен с диффузором"]],
+  audio: ["🔊 Колонки", "🔊", ["Колонка Бас-Бокс", "Умная колонка Алиса", "Колонка Ретро", "Саундбар 2.1", "Мини-колонка Клип"]],
+  consoles: ["🎮 Консоли", "🎮", ["Ретро-приставка 8 бит", "Портативка 400 игр", "Геймпад беспроводной", "Подставка для геймпадов", "Ретро-стик"]],
+  cosmetics: ["💄 Косметика", "💄", ["Помада матовая", "Тушь объёмная", "Крем для рук", "Шампунь «Сила»", "Палетка теней"]],
+  drinks: ["🥤 Напитки", "🥤", ["Кола 0.5 л", "Энергетик «Вольт»", "Холодный чай", "Минералка", "Квас бочковой"]],
+  tech: ["📺 Техника", "📺", ["Телевизор 43\"", "Микроволновка", "Робот-пылесос", "Электрочайник", "Наушники TWS"]],
+};
+const SHOP_COLORS = { a: "#e5533d", b: "#2f7de1", c: "#e04b7a", d: "#5aa647", e: "#c9a227" };
+const SHOP_NAMES = { a: "⚡ ЧипТорг", b: "📦 РадиоДеталь", c: "🛍 Али-Базар", d: "🧺 Барахолка", e: "⭐ Склад производителя" };
+let chosenShop = "";
+
+function shopTable() {        // площадки приходят из бота: a:цена%:доставка_сек:брак%:редкость
+  const out = {};
+  for (const part of (Q.get("ps") || "a:15:60:2:0,b:8:75:6:0,c:3:120:15:0,d:1:90:30:0,e:3:60:1:20").split(",")) {
+    const [code, cost, wait, defect, rare] = part.split(":");
+    if (/^[a-z]$/.test(code)) out[code] = { cost: +cost || 0, wait: Math.min(180, +wait || 60), defect: +defect || 0, rare: +rare || 0 };
+  }
+  return out;
+}
+const fmtMoney = n => n.toLocaleString("ru-RU");
+const shopKey = () => store.key + "_shop";
+function shopState() { try { return JSON.parse(localStorage.getItem(shopKey()) || "null"); } catch (e) { return null; } }
+function saveShopState(v) { try { localStorage.setItem(shopKey(), JSON.stringify(v)); } catch (e) { /* ok */ } }
+
+function waitRotate() {
+  return new Promise(resolve => {
+    if (window.innerWidth > window.innerHeight) return resolve();
+    $stage.innerHTML = "";
+    const box = el("div", "card rotate", $stage, `<div class="phone">📱</div><br>Переверни телефон горизонтально —<br>откроется сайт магазина`);
+    const check = () => { if (window.innerWidth > window.innerHeight) { cleanup(); resolve(); } };
+    const timer = setInterval(check, 300);
+    window.addEventListener("resize", check);
+    const skip = el("button", "btn alt hidden", box, "Не поворачивается — продолжить так");
+    setTimeout(() => skip.classList.remove("hidden"), 4000);
+    skip.onclick = () => { cleanup(); resolve(); };
+    function cleanup() { clearInterval(timer); window.removeEventListener("resize", check); }
+  });
+}
+
+GAMES.shop = (rnd, arg) => new Promise(async resolve => {
+  const shops = shopTable();
+  const need = PART_TYPES[arg] || PART_TYPES.drive;
+  const finish = async (ok, msg) => { await toast(ok, msg); saveShopState(null); resolve(ok); };
+  let st = shopState();
+
+  // 1) выбор площадки
+  if (!st || !st.shop) {
+    const codes = Object.keys(shops).filter(c => !shops[c].rare || rnd.int(1, 100) <= shops[c].rare);
+    const code = await new Promise(pick => {
+      $stage.innerHTML = "";
+      const card = el("div", "card", $stage);
+      el("div", "title", card, KINDS.shop);
+      el("div", "info", card, `Нужна деталь: <b>${need[0].toLowerCase()}</b>. Где покупаем? У каждой площадки свои плюсы и минусы.`);
+      for (const c of codes) {
+        const s = shops[c];
+        const cost = s.cost >= 10 ? "дорого" : s.cost >= 5 ? "средне" : s.cost >= 2 ? "дёшево" : "почти даром";
+        const box = el("div", "shopcard", $stage, `<b>${SHOP_NAMES[c] || c}</b><br>
+          <span class="${s.cost >= 10 ? "cons" : "pros"}">💰 ${cost}: −${s.cost}% от оплаты ремонта</span><br>
+          <span class="${s.wait > 80 ? "cons" : "pros"}">🚚 доставка ~${Math.round(s.wait / 60 * 10) / 10} мин</span><br>
+          <span class="${s.defect > 10 ? "cons" : "pros"}">🧪 брак: ${s.defect}%</span>`);
+        box.style.borderColor = SHOP_COLORS[c] || "transparent";
+        box.onclick = () => { haptic("medium"); pick(c); };
+      }
+    });
+    st = { shop: code, ordered: null, right: null };
+    saveShopState(st);
+  }
+  chosenShop = st.shop;
+  const sh = shops[st.shop] || shops.b || { cost: 8, wait: 75, defect: 6 };
+  const color = SHOP_COLORS[st.shop] || "#2f7de1";
+
+  // 2) поворот и «сайт» площадки
+  if (!st.ordered) {
+    await waitRotate();
+    const parts = OTHER_PARTS.map(p => ({ name: `${p[0]} ${["X", "P", "M", "S"][rnd.int(0, 3)]}-${rnd.int(10, 99)}`, em: p[1], cat: "parts" }));
+    for (const [k, t] of Object.entries(PART_TYPES)) {
+      if (k === arg) continue;
+      if (rnd.f() < 0.6) parts.push({ name: `${t[0]} ${["A", "K", "T"][rnd.int(0, 2)]}${rnd.int(100, 999)}`, em: t[1], cat: "parts" });
+    }
+    const right = { name: `${need[0]} ${["A", "K", "T"][rnd.int(0, 2)]}${rnd.int(100, 999)}`, em: need[1], cat: "parts", right: true };
+    parts.push(right);
+    const goods = [];
+    for (const [k, g] of Object.entries(GOODS)) for (const n of g[2]) goods.push({ name: n, em: g[1], cat: k });
+    const all = rnd.shuffle(goods.concat(parts)).map(p => Object.assign(p, { price: p.cat === "parts" ? rnd.int(3, 90) * 100 : rnd.int(5, 400) * 100,
+      rate: (3.5 + rnd.f() * 1.5).toFixed(1) }));
+    const order = await new Promise(buy => {
+      let tab = "rec";
+      const render = () => {
+        $stage.innerHTML = "";
+        const mp = el("div", "mp", $stage);
+        const top = el("div", "mp-top", mp, `<b>${SHOP_NAMES[st.shop] || "Магазин"}</b>`);
+        top.style.background = color;
+        const search = el("div", "mp-search", top, "🔍 Поиск по магазину");
+        search.onclick = () => toast(false, "😅 Поиск временно не работает — ищи по разделам");
+        el("div", "mp-need", mp, `📝 Нужно найти: <b>${need[0].toLowerCase()}</b> — она в разделе «🔧 Запчасти»`);
+        const tabs = el("div", "mp-tabs", mp);
+        const list = [["rec", "⭐ Рекомендации"], ...Object.entries(GOODS).map(([k, g]) => [k, g[0]]), ["parts", "🔧 Запчасти"]];
+        for (const [k, label] of list) {
+          const t = el("span", k === tab ? "on" : "", tabs, label);
+          t.onclick = () => { tab = k; haptic("light"); render(); };
+        }
+        const grid = el("div", "mp-grid", mp);
+        const shown = tab === "rec" ? all.filter(p => !p.right).slice(0, 12) : all.filter(p => p.cat === tab);
+        for (const p of shown) {
+          const it = el("div", "mp-item", grid, `<div class="em">${p.em}</div><div class="pr">${fmtMoney(p.price)} ₽</div>
+            <div class="nm">${esc(p.name)}</div><div class="sub">★ ${p.rate}</div>`);
+          it.onclick = () => page(p);
+        }
+      };
+      const page = p => {
+        $stage.innerHTML = "";
+        const mp = el("div", "mp", $stage);
+        el("div", "mp-top", mp, `<b>${SHOP_NAMES[st.shop] || "Магазин"}</b>`).style.background = color;
+        const pg = el("div", "mp-page", mp, `<div class="em">${p.em}</div><h3>${esc(p.name)}</h3>
+          <div class="pr" style="font-size:22px;font-weight:800">${fmtMoney(p.price)} ₽</div>
+          <div class="sub">★ ${p.rate} · продавец: ${SHOP_NAMES[st.shop] || "магазин"} · доставка ~${Math.round(sh.wait / 60 * 10) / 10} мин</div>`);
+        const b = el("button", "mp-btn", pg, "🛒 Заказать"); b.style.background = color;
+        b.onclick = () => { haptic("medium"); buy(p); };
+        const back = el("button", "mp-btn", pg, "← Назад к товарам"); back.style.background = "#888";
+        back.onclick = render;
+      };
+      render();
+    });
+    st.ordered = Date.now(); st.right = !!order.right; st.item = order.name;
+    saveShopState(st);
+  }
+
+  // 3) доставка (1–2 минуты, зависит от площадки) — переживает закрытие приложения
+  await new Promise(arrived => {
+    $stage.innerHTML = "";
+    const card = el("div", "card center", $stage);
+    el("div", "title", card, "🚚 Заказ оформлен");
+    el("div", "info", card, `${esc(st.item || "Деталь")} · ${SHOP_NAMES[st.shop] || ""}`);
+    const bar = el("div", "meter", card); bar.style.position = "relative"; bar.style.margin = "14px 0"; bar.style.left = "0";
+    const fill = el("i", "", bar);
+    const status = el("div", "sub", card, "");
+    const stages = ["🧾 Собираем заказ", "📦 Передан в доставку", "🛵 Курьер в пути", "🚪 Курьер у двери"];
+    const tick = () => {
+      const p = Math.min(1, (Date.now() - st.ordered) / (sh.wait * 1000));
+      fill.style.width = p * 100 + "%";
+      const left = Math.max(0, Math.ceil(sh.wait - (Date.now() - st.ordered) / 1000));
+      status.textContent = `${stages[Math.min(3, Math.floor(p * 4))]} · осталось ${left} с`;
+      if (p >= 1) { clearInterval(timer); haptic("ok"); arrived(); }
+    };
+    const timer = setInterval(tick, 250); tick();
+  });
+  if (!st.right) return finish(false, "❌ Пришла не та деталь — она не подходит");
+
+  // 4) пайка: включить паяльник, дождаться нагрева, пропаять
+  const solderOk = await new Promise(res => {
+    const f = frame("🧑‍🏭 Впаиваем деталь", "Сначала <b>включи паяльник</b> и дождись 350°C. Потом зажимай каждый контакт и отпускай в зелёной зоне.", 45);
+    const iron = el("div", "iron", f.card, `Паяльник: <span class="switch"><i></i></span> <b class="t">25°C</b>`);
+    const sw = iron.querySelector(".switch"), tEl = iron.querySelector(".t");
+    let temp = 25, on = false, finished = 0, bad = 0, ended = false;
+    const end = (ok, msg) => { if (ended) return; ended = true; clearInterval(heat); f.stop(); toast(ok, msg).then(() => res(ok)); };
+    sw.onclick = () => { on = !on; sw.classList.toggle("on", on); haptic("medium"); };
+    const heat = setInterval(() => { temp = Math.max(25, Math.min(350, temp + (on ? 18 : -10))); tEl.textContent = Math.round(temp) + "°C"; }, 200);
+    const n = 4;
+    for (let i = 0; i < n; i++) {
+      const p = at(el("div", "pin abs", f.board), 20 + i * 20, 50);
+      const pr = el("div", "pr", p), zl = el("div", "zone", p), zh = el("div", "zone", p);
+      const low = 0.55 + rnd.f() * 0.1, high = low + 0.25;
+      zl.style.bottom = low * 100 + "%"; zh.style.bottom = high * 100 + "%";
+      let v = 0, timer = null, state = 0;
+      const fin = ok => { clearInterval(timer); state = 2; finished++; p.classList.add(ok ? "good" : "bad"); if (!ok) bad++;
+        if (finished === n) end(bad === 0, bad === 0 ? "✅ Деталь впаяна!" : `❌ Плохих контактов: ${bad}`); };
+      hold(p, () => {
+        if (state) return;
+        if (temp < 300) return toast(false, on ? "⏳ Паяльник ещё греется" : "🔌 Сначала включи паяльник");
+        state = 1;
+        timer = setInterval(() => { v += 0.03; pr.style.height = Math.min(100, v * 100) + "%"; if (v >= 1) fin(false); }, 30);
+      }, () => { if (state === 1 && timer) fin(v >= low && v <= high); });
+    }
+    f.startTimer(() => end(false, "⌛ Не успел впаять"));
+  });
+  if (!solderOk) return finish(false, "❌ Пайка не удалась");
+  if (rnd.int(1, 100) <= sh.defect) return finish(false, "💥 Деталь оказалась бракованной! Не повезло с площадкой");
+  finish(true, "✅ Деталь работает!");
+});
+
 // ================================================================ ход ремонта
 function drawSteps(results, cur) {
   const box = document.getElementById("steps");
@@ -621,7 +1083,8 @@ function drawSteps(results, cur) {
 const BOT = Q.get("bot") || "";
 function send(results) {
   if (!/^[A-Za-z0-9_]{3,40}$/.test(BOT) || !/^[0-9a-f]{1,16}$/.test(REP) || !/^[0-9a-f]{24}$/.test(KEY)) return false;
-  const link = `https://t.me/${BOT}?start=wa_${REP}_${results.join("")}_${KEY}`;
+  const shopCode = /^[a-z]$/.test(chosenShop) ? `_${chosenShop}` : "";
+  const link = `https://t.me/${BOT}?start=wa_${REP}_${results.join("")}${shopCode}_${KEY}`;
   try {
     if (TG && TG.openTelegramLink) { TG.openTelegramLink(link); setTimeout(() => { try { TG.close(); } catch (e) { /* ok */ } }, 400); }
     else location.href = link;
@@ -653,6 +1116,7 @@ async function main() {
   document.getElementById("hdr").textContent = "🛠 " + (Q.get("n") || "Ремонт");
   sub.textContent = "Поломка: " + (Q.get("b") || "—");
   const saved = await store.load();
+  try { chosenShop = localStorage.getItem(store.key + "_chosen") || ""; } catch (e) { /* ok */ }
   const results = Array.isArray(saved) ? saved.filter(x => x === 0 || x === 1).slice(0, PLAN.length) : [];
   for (let i = results.length; i < PLAN.length; i++) {
     drawSteps(results, i);
@@ -660,6 +1124,7 @@ async function main() {
     const ok = await GAMES[kind](makeRnd((SEED * 31 + i * 7919) >>> 0), arg);
     results.push(ok ? 1 : 0);
     store.save(results);
+    if (chosenShop) { try { localStorage.setItem(store.key + "_chosen", chosenShop); } catch (e) { /* ok */ } }
   }
   finalScreen(results);
 }
